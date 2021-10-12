@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="YoutubeDownloader">
+    <output-path>$PROJECT_DIR$/out/artifacts/YoutubeDownloader</output-path>
+    <root id="archive" name="YoutubeDownloader.jar">
+      <element id="module-output" name="TinyYoutubeDownloader" />
+    </root>
+  </artifact>
+</component>
