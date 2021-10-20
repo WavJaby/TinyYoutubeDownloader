@@ -98,3 +98,6 @@ videoInfoGetter.getVideo(VIDEO_URL, (videoInfo) -> {
     });
 });
 ```
+
+## Example
+[Example File](src/com/wavjaby/Main.java)
