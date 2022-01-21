@@ -16,11 +16,11 @@ import java.util.regex.Pattern;
 
 public class VideoInfo {
     private Map<ITag, VideoObject> videoType;
-    private String videoID;
-    private JsonObject rawData;
-    private JsonObject videoDetails;
-    private JsonArray videoFormats;
-    private String baseJsUrl;
+    private final String videoID;
+    private final JsonObject rawData;
+    private final JsonObject videoDetails;
+    private final JsonArray videoFormats;
+    private final String baseJsUrl;
 
     private GetVideoErrorEvent errorEvent;
 

@@ -1,8 +1,8 @@
 package com.wavjaby;
 
 import com.wavjaby.convert.ConvertVideo;
-import com.wavjaby.json.JsonArray;
 import com.wavjaby.youtube.VideoInfoGetter;
+import com.wavjaby.youtube.downloader.ProgressListener;
 import com.wavjaby.youtube.downloader.SpeedCalculator;
 import com.wavjaby.youtube.downloader.VideoDownloader;
 import com.wavjaby.youtube.util.Container;
@@ -28,9 +28,7 @@ public class Main {
         String url = userInput.nextLine();
         System.out.println("getting video from: " + url);
         videoInfoGetter.getVideo(url, (videoInfo) -> {
-//            System.out.println(videoInfo.getRawData().toStringBeauty());
-
-            //get video info
+            // get video info
             System.out.println("Video url: https://youtu.be/" + videoInfo.getVideoID());
             System.out.println("Channel url: https://www.youtube.com/channel/" + videoInfo.getChannelID());
             System.out.println("Channel title: " + videoInfo.getTitle());
@@ -41,11 +39,12 @@ public class Main {
             System.out.println("Thumbnail size: " + thumbnail.getWidth() + "x" + thumbnail.getHeight());
             System.out.println("View count: " + videoInfo.getViewCount());
 
-            //get video
+            // get video
             videoInfo.setErrorEvent((errorType, message) -> {
                 System.err.println(errorType.name() + ": " + message);
             });
             videoInfo.getVideoData(videoData -> {
+                // video format
                 videoData.forEach((iTag, video) -> {
                     if (iTag.hasVideo())
                         System.out.println("Video: " + video.getVideoQuality() + "," + video.getFps() + "FPS");
@@ -55,9 +54,7 @@ public class Main {
                     System.out.println(video.getMimeType());
                 });
 
-
-                System.out.println(videoInfo.getBestAudioM4A().getUrl());
-
+                // get quality
                 String[] input = userInput.nextLine().split("p");
                 VideoQuality videoQuality = VideoQuality.getQuality(Integer.parseInt(input[0]));
                 VideoObject videoObject;
@@ -65,12 +62,19 @@ public class Main {
                     videoObject = videoInfo.getVideoByQualityFpsType(videoQuality, Integer.parseInt(input[1]), Container.Mp4);
                 else
                     videoObject = videoInfo.getVideoByQualityType(videoQuality, Container.Mp4).get(0);
+                VideoObject audioObject = videoInfo.getBestAudioM4A();
 
-                String videoUrl = videoObject.getUrl();
-                System.out.println(videoUrl);
-                System.out.println(videoObject.getContentLength());
+
+                // raw data
+//                System.out.println(videoInfo.getRawData().toStringBeauty());
+                // print video info
+                System.out.println(videoObject.getUrl());
                 System.out.println(videoObject.getMimeType());
-                System.out.println(videoInfo.getLengthSec());
+                System.out.println(videoObject.getContentLength() / 1024 / 1024 + "MB");
+                // print audio info
+                System.out.println(audioObject.getUrl());
+                System.out.println(audioObject.getMimeType());
+                System.out.println(audioObject.getContentLength() / 1024 / 1024 + "MB");
 
 
                 String outputDir = "C:\\Users\\Eason\\Desktop";
@@ -79,8 +83,8 @@ public class Main {
 
                 CountDownLatch count = new CountDownLatch(2);
                 VideoDownloader videoDownloader = new VideoDownloader(videoObject, tempVideo);
-                VideoDownloader audioDownloader = new VideoDownloader(videoInfo.getBestAudioM4A(), tempAudio);
-                videoDownloader.setListener(new VideoDownloader.ProgressListener() {
+                VideoDownloader audioDownloader = new VideoDownloader(audioObject, tempAudio);
+                videoDownloader.setListener(new ProgressListener() {
                     @Override
                     public void progress(float percent, long pos, String speed, ThreadPoolExecutor executor) {
                         System.out.print("\rdone: " + executor.getCompletedTaskCount() +
@@ -98,7 +102,7 @@ public class Main {
                         count.countDown();
                     }
                 });
-                audioDownloader.setListener(new VideoDownloader.ProgressListener() {
+                audioDownloader.setListener(new ProgressListener() {
                     @Override
                     public void progress(float percent, long pos, String speed, ThreadPoolExecutor executor) {
 

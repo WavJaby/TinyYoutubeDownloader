@@ -1,17 +1,17 @@
 package com.wavjaby.youtube.downloader;
 
 public class SpeedCalculator {
-    private long startTime = System.currentTimeMillis();
+    private final long startTime = System.currentTimeMillis();
     private long endTime;
 
-    private long size;
-    private int pos = 0;
+    private final long size;
+    private long pos = 0;
 
     public SpeedCalculator(long size) {
         this.size = size;
     }
 
-    public synchronized void add(int length) {
+    public synchronized void add(long length) {
         pos += length;
     }
 
@@ -21,7 +21,21 @@ public class SpeedCalculator {
 
     public String getSpeed() {
         long nowTime = System.currentTimeMillis();
-        double speedByteS = (pos - lastPos) / ((double) (nowTime - lastTime) / 1000);
+        double timePass = (double) (nowTime - lastTime) / 1000;
+        if (timePass == 0) return null;
+        // byte per second
+        double speedByteS = (double) (pos - lastPos) / timePass;
+
+        // second average
+        double avg = (double) (nowTime - lastTime) / 1000;
+        speedByteS *= avg;
+        speedByteS += lastSpeed * (1 - avg);
+        if (nowTime - lastTime >= 1000) {
+            lastPos = pos;
+            lastTime = nowTime;
+            lastSpeed = speedByteS;
+        }
+
         String unit = "Byte/s";
         if (speedByteS > 1000) {
             unit = "KB/s";
@@ -34,16 +48,6 @@ public class SpeedCalculator {
         if (speedByteS > 1000) {
             unit = "GB/s";
             speedByteS /= 1000;
-        }
-
-        float avg = (float) (nowTime - lastTime) / 1000;
-        speedByteS *= avg;
-        speedByteS += lastSpeed * (1 - avg);
-
-        if (nowTime - lastTime >= 1000) {
-            lastPos = pos;
-            lastTime = nowTime;
-            lastSpeed = speedByteS;
         }
         return String.format("%.1f", speedByteS) + unit;
     }

@@ -2,6 +2,7 @@ package com.wavjaby.youtube.decrypt;
 
 import com.wavjaby.youtube.VideoInfo;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -24,7 +25,7 @@ public class YoutubeDecrypt {
         }
 
         //尋找亂序函式
-        Pattern pattern = Pattern.compile("function\\(\\w+\\)\\{[\\w=.(\")]+;([\\w=.,(\");]*);return \\w+\\.join[(\")]*\\}\\;");
+        Pattern pattern = Pattern.compile("function\\(\\w+\\)\\{[\\w=.]+\\(\"*\\);([$\\w.,(\");]+);return \\w+\\.join\\(\"*\\)*};");
         Matcher match = pattern.matcher(baseJS);
         if (match.find()) {
             steps = match.group(1).split(";");
@@ -34,8 +35,8 @@ public class YoutubeDecrypt {
         }
 
         //尋找函式定義
-        String fnMapName = steps[0].split("\\.")[0];
-        pattern = Pattern.compile("\\w+ " + fnMapName + "=\\{(.*\\n*.*\\n*.*\\})\\}\\;");
+        String fnMapName = Pattern.quote(steps[0].split("\\.")[0]);
+        pattern = Pattern.compile("\\w+ " + fnMapName + "=\\{(.*\\n*.*\\n*.*})};");
         match = pattern.matcher(baseJS);
         String functions;
         if (match.find()) {
@@ -45,7 +46,7 @@ public class YoutubeDecrypt {
             return;
         }
         //分出函式
-        pattern = Pattern.compile("(\\w+):function\\(\\w*,*\\w*\\)\\{([\\w,.() =;%\\[\\]]*)\\}");
+        pattern = Pattern.compile("(\\w+):function\\(\\w*,*\\w*\\)\\{([\\w,.() =;%\\[\\]]*)}");
         match = pattern.matcher(functions);
         while (match.find()) {
             String fct = match.group(2);

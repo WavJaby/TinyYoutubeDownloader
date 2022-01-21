@@ -30,14 +30,15 @@ public class VideoDownloader extends Thread {
 
     @Override
     public void run() {
-        ThreadFileWriter fileWriter = new ThreadFileWriter(file);
         //download
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(20);
-        //buff
-        int buffSize = 1024 * 1024 * 10;
+        int threadSize = 30;
+        //buff (max 10 MB)
+        long buffSize = Math.min(fileSize / threadSize, 1024 * 1024 * 10);
         //now byte pos
-        int nowPos = 0;
+        long nowPos = 0;
 
+        ThreadFileWriter fileWriter = new ThreadFileWriter(file);
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(threadSize);
         SpeedCalculator cal = new SpeedCalculator(fileSize);
         do {
             String rangeHeader = "bytes=" + nowPos + "-" + (nowPos + buffSize - 1);
@@ -46,22 +47,29 @@ public class VideoDownloader extends Thread {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             int threadID = fileWriter.add(out);
             executor.execute(() -> {
-                try {
-                    HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-                    connection.setRequestProperty("Range", rangeHeader);
-                    InputStream in = connection.getInputStream();
-                    //10KB
-                    byte[] buff = new byte[100000];
-                    int length;
-                    while ((length = in.read(buff)) > 0) {
-                        out.write(buff, 0, length);
-                        cal.add(length);
-                        if (listener != null)
-                            listener.progress(cal.getPercent(), cal.getPos(), cal.getSpeed(), executor);
+                while (true) {
+                    try {
+                        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+                        connection.setRequestProperty("Range", rangeHeader);
+                        InputStream in = connection.getInputStream();
+                        //10KiB
+                        byte[] buff = new byte[1024];
+                        int length;
+                        while ((length = in.read(buff)) > 0) {
+                            out.write(buff, 0, length);
+                            cal.add(length);
+
+                            // calculate progress
+                            String speed;
+                            if (listener != null && (speed = cal.getSpeed()) != null)
+                                listener.progress(cal.getPercent(), cal.getPos(), speed, executor);
+                        }
+                        fileWriter.threadDone(threadID);
+                        break;
+                    } catch (IOException e) {
+                        System.err.println(e.getMessage());
+                        System.err.println("Thread " + getId() + " error, retrying...");
                     }
-                    fileWriter.threadDone(threadID);
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             });
 
@@ -75,7 +83,8 @@ public class VideoDownloader extends Thread {
         //wait download
         try {
             executor.shutdown();
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            boolean success = executor.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);
+            if (!success) System.err.println("Download timeout, how is it possible?");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -89,10 +98,5 @@ public class VideoDownloader extends Thread {
 
     public void setListener(ProgressListener listener) {
         this.listener = listener;
-    }
-
-    public interface ProgressListener {
-        void progress(float percent, long pos, String speed, ThreadPoolExecutor executor);
-        void done(SpeedCalculator calculator);
     }
 }

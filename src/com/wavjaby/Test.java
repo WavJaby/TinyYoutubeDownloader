@@ -13,8 +13,6 @@ import java.nio.charset.StandardCharsets;
 public class Test {
 
     Test() {
-//        System.out.println(getUrl("https://www.youtube.com/embed/dQw4w9WgXcQ"));
-
         String url = "https://youtubei.googleapis.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
         String payload = "{\"videoId\":\"qhTkYIQQKYk\",\"context\":{\"client\":{\"hl\":\"zh\",\"gl\":\"TW\",\"clientName\":\"WEB\",\"clientVersion\":\"2.20210330.08.00\"}}}";
         JsonObject jsonObject = new JsonObject(getUrl(url, payload));
@@ -28,7 +26,7 @@ public class Test {
         try {
             HttpURLConnection connection = (HttpURLConnection) new URL(input).openConnection();
             connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type","application/json; charset=UTF-8");
+            connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             connection.setUseCaches(false);
             connection.setDoOutput(true);
             //post
@@ -37,7 +35,7 @@ public class Test {
             payloadOut.flush();
             //get
             InputStream in;
-            if(connection.getResponseCode() > 200)
+            if (connection.getResponseCode() > 200)
                 in = connection.getErrorStream();
             else
                 in = connection.getInputStream();
